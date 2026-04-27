@@ -8,9 +8,11 @@ export XIM_PROGRAM="fcitx"
 export GDK_BACKEND=x11
 export QT_QPA_PLATFORM=xcb
 
-# 初始化 D-Bus
+# 确保 D-Bus 运行环境
 if [ ! -d "/run/user/0" ]; then
-    export DBUS_SESSION_BUS_ADDRESS="unix:abstract=/tmp/dbus-session-$$"
+    mkdir -p /run/user/0
+    chmod 700 /run/user/0
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/0/bus"
     dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS"
 fi
 
@@ -18,13 +20,13 @@ fi
 start_fcitx() {
     pkill -9 fcitx 2>/dev/null
     rm -rf /tmp/fcitx-*
-    fcitx -d
-    # 等待输入法启动并强制设为 Rime
-    sleep 5
+    # 使用最小化启动参数
+    fcitx -r -d 2>/dev/null
+    sleep 3
     fcitx-remote -s rime 2>/dev/null
 }
 
-# 简单的健康检查：每30秒检查一次 fcitx 进程
+# 后台监控
 (
     while true; do
         if ! pgrep -x "fcitx" > /dev/null; then
